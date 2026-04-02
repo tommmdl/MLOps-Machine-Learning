@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: mlops-api
+    static_configs:
+      - targets: ["api:8000"]
+
+remote_write:
+  - url: https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-329a1324-3e97-4ad6-b783-4150322da48d/api/v1/remote_write
+    sigv4:
+      region: us-east-1
+    queue_config:
+      max_samples_per_send: 1000
+      max_shards: 200
+      capacity: 2500

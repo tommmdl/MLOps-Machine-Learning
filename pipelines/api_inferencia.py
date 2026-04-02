@@ -5,12 +5,22 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
+from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_client import Counter
 import os
 
 app = FastAPI(
     title="MLOps Showcase — Anomaly Detection API",
     description="Detecção de anomalias em métricas AWS CloudWatch usando Isolation Forest",
     version="1.0.0"
+)
+
+Instrumentator().instrument(app).expose(app)
+
+anomalias_detectadas = Counter(
+    "anomalias_detectadas_total",
+    "Total de anomalias detectadas pelo modelo",
+    ["nome_metrica"]
 )
 
 BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
@@ -63,6 +73,8 @@ def predict(batch: MetricasBatch):
         resultados = []
         for i, (pred, score) in enumerate(zip(predicoes, scores)):
             anomalia = pred == -1
+            if anomalia:
+                anomalias_detectadas.labels(nome_metrica=batch.nome_metrica).inc()
             resultados.append(AnomaliaResponse(
                 anomalia=anomalia,
                 score=round(float(score), 4),
